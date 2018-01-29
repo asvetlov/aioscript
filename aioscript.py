@@ -95,6 +95,9 @@ class AbstractScript(metaclass=abc.ABCMeta):
         """
         pass
 
+    async def done(self):
+        pass
+
     async def _close(self):
         await self.close()
 
@@ -117,6 +120,8 @@ class AbstractScript(metaclass=abc.ABCMeta):
 
             assert len(self.coroutines) == 0
             assert self.queue.get_nowait() is ...
+
+            await self.done()
 
             msg = 'All done'
             self.logger.info(msg)
