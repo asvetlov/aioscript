@@ -10,6 +10,8 @@ from functools import partial
 
 class AbstractScript(metaclass=abc.ABCMeta):
 
+    periodic_task = None
+
     def __init__(self):
         self.loop = asyncio.new_event_loop()
 
@@ -33,6 +35,8 @@ class AbstractScript(metaclass=abc.ABCMeta):
             self.coroutines.add(coro)
             coro.add_done_callback(self.coroutines.remove)
 
+        self.periodic_task = self.loop.create_task(self._periodic())
+
         self.setup()
 
     def setup_options(self, argv, parser):
@@ -49,7 +53,40 @@ class AbstractScript(metaclass=abc.ABCMeta):
             type=int,
         )
 
+        parser.add_argument(
+            '--periodic_interval',
+            type=int,
+            default=15,  # 15 sec
+        )
+
         return parser
+
+    async def _periodic(self):
+        while True:
+            try:
+                await asyncio.sleep(
+                    self.options.periodic_interval,
+                    loop=self.loop,
+                )
+
+                try:
+                    await self.periodic()
+                except asyncio.CancelledError:
+                    raise
+                except Exception as exc:
+                    self.logger.exception(exc, exc_info=exc)
+            except asyncio.CancelledError:
+                break
+
+    async def periodic(self):
+        """
+        This task runs every `periodic_interval` seconds.
+        `periodic_interval` is 15 seconds by default,
+        but can be redefined via console.
+        Example: logs number of processed items.
+        :return:
+        """
+        pass
 
     async def coro(self):
         while True:
@@ -188,3 +225,11 @@ class AbstractScript(metaclass=abc.ABCMeta):
             self.loop.run_until_complete(task)
         finally:
             self.loop.run_until_complete(self._close())
+
+            if self.periodic_task is not None:
+                self.periodic_task.cancel()
+
+                try:
+                    self.loop.run_until_complete(self.periodic_task)
+                except:  # noqa
+                    pass
