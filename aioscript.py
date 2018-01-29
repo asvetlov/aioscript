@@ -8,6 +8,9 @@ import sys
 from functools import partial
 
 
+def _sigint(signum, frame):
+    os.kill(os.getpid(), signal.SIGINT)
+
 class AbstractScript(metaclass=abc.ABCMeta):
 
     periodic_task = None
@@ -45,6 +48,13 @@ class AbstractScript(metaclass=abc.ABCMeta):
         return options
 
     def setup_parser(self):
+        """
+        Defines command-line arguments.
+        Base arguments:
+        - coroutines - number of workerks.
+        - periodic_interval - number of seconds
+        :return: argparse.ArgumentParser instance
+        """
         parser = argparse.ArgumentParser()
 
         parser.add_argument(
@@ -114,14 +124,17 @@ class AbstractScript(metaclass=abc.ABCMeta):
         """
         Setup additional dependencies, such as:
         db connection, aiohttp session etc.
+        Must be redefined.
         :return:
         """
 
     @abc.abstractmethod
     def handle(self, data):
         """
-
-        :param data:
+        Here must be implemented worker logic
+        that processes data accepted from `populate` method.
+        Must be redefined.
+        :param data: data t
         :return:
         """
         pass
@@ -131,6 +144,7 @@ class AbstractScript(metaclass=abc.ABCMeta):
         """
         Send data to your workers.
         It can be reading from file, database etc.
+        Must be redefined.
         :return:
         """
         pass
@@ -207,6 +221,7 @@ class AbstractScript(metaclass=abc.ABCMeta):
             await self.terminate()
 
     def run(self):
+        signal.signal(signal.SIGTERM, _sigint)
         task = self.loop.create_task(self._run())
 
         try:
