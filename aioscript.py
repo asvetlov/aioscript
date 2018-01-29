@@ -8,6 +8,8 @@ import sys
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 
+import aioprocessing
+
 
 def _sigint(signum, frame):
     os.kill(os.getpid(), signal.SIGINT)
@@ -15,6 +17,8 @@ def _sigint(signum, frame):
 
 class AbstractScript(metaclass=abc.ABCMeta):
 
+    multiprocessing = False
+    pool = None
     periodic_task = None
 
     def __init__(self):
@@ -42,6 +46,9 @@ class AbstractScript(metaclass=abc.ABCMeta):
             self.coroutines.add(coro)
             coro.add_done_callback(self.coroutines.remove)
 
+        if self.options.processes > 0:
+            self.pool = aioprocessing.AioPool(processes=self.options.processes)
+
         self.periodic_task = self.loop.create_task(self._periodic())
 
         self.setup()
@@ -62,6 +69,9 @@ class AbstractScript(metaclass=abc.ABCMeta):
 
     def setup_options(self, argv, parser):
         options = parser.parse_args(argv)
+
+        if self.multiprocessing and not options.processes:
+            raise ValueError('--processes >= 1 is required to use pool')
 
         return options
 
@@ -84,6 +94,12 @@ class AbstractScript(metaclass=abc.ABCMeta):
         parser.add_argument(
             '--threads',
             default=1,
+            type=int,
+        )
+
+        parser.add_argument(
+            '--processes',
+            default=0,
             type=int,
         )
 
@@ -222,6 +238,11 @@ class AbstractScript(metaclass=abc.ABCMeta):
             self.loop.run_forever()
             self.loop.close()
 
+    async def run_in_pool(self, *args, **kwargs):
+        kwargs['loop'] = self.loop
+
+        return await self.pool.coro_apply(*args, **kwargs)
+
     async def _run(self):
         try:
             async for item in self.populate():
@@ -241,11 +262,18 @@ class AbstractScript(metaclass=abc.ABCMeta):
 
             await self.done()
 
+            if self.pool is not None:
+                self.pool.close()
+                self.pool.join()
+
             msg = 'All done'
             self.logger.info(msg)
 
             self.loop.call_soon(self.loop.stop)
         except asyncio.CancelledError:
+            if self.pool is not None:
+                self.pool.terminate()
+
             for worker in self.coroutines:
                 worker.cancel()
 
