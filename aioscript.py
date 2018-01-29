@@ -11,13 +11,12 @@ from functools import partial
 def _sigint(signum, frame):
     os.kill(os.getpid(), signal.SIGINT)
 
+
 class AbstractScript(metaclass=abc.ABCMeta):
 
     periodic_task = None
 
     def __init__(self):
-        self.loop = asyncio.new_event_loop()
-
         parser = self.setup_parser()
 
         self.options = self.setup_options(
@@ -26,6 +25,8 @@ class AbstractScript(metaclass=abc.ABCMeta):
         )
 
         self.logger = logging.getLogger('script')
+
+        self.loop = self._setup_loop(use_uvloop=self.options.use_uvloop)
 
         self.queue = asyncio.Queue(
             maxsize=self.options.coroutines * 3,
@@ -41,6 +42,20 @@ class AbstractScript(metaclass=abc.ABCMeta):
         self.periodic_task = self.loop.create_task(self._periodic())
 
         self.setup()
+
+    def _setup_loop(self, use_uvloop):
+        debug = bool(os.environ.get('PYTHONASYNCIODEBUG'))
+
+        if use_uvloop:
+            import uvloop
+            loop = uvloop.new_event_loop()
+        else:
+            import asyncio
+            loop = asyncio.new_event_loop()
+
+        loop.set_debug(debug)
+
+        return loop
 
     def setup_options(self, argv, parser):
         options = parser.parse_args(argv)
@@ -67,6 +82,11 @@ class AbstractScript(metaclass=abc.ABCMeta):
             '--periodic_interval',
             type=int,
             default=15,  # 15 sec
+        )
+
+        parser.add_argument(
+            '--use_uvloop',
+            action='store_true',
         )
 
         return parser
