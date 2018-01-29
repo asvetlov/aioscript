@@ -5,6 +5,7 @@ import logging
 import os
 import signal
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 
 
@@ -27,6 +28,8 @@ class AbstractScript(metaclass=abc.ABCMeta):
         self.logger = logging.getLogger('script')
 
         self.loop = self._setup_loop(use_uvloop=self.options.use_uvloop)
+
+        self.executor = ThreadPoolExecutor(max_workers=self.options.threads)
 
         self.queue = asyncio.Queue(
             maxsize=self.options.coroutines * 3,
@@ -74,6 +77,12 @@ class AbstractScript(metaclass=abc.ABCMeta):
 
         parser.add_argument(
             '--coroutines',
+            default=1,
+            type=int,
+        )
+
+        parser.add_argument(
+            '--threads',
             default=1,
             type=int,
         )
@@ -195,6 +204,11 @@ class AbstractScript(metaclass=abc.ABCMeta):
     async def _close(self):
         await self.close()
 
+        try:
+            self.executor.shutdown(wait=True)
+        except BaseException as exc:
+            self.logger.exception(exc, exc_info=exc)
+
     async def close(self):
         pass
 
@@ -269,8 +283,6 @@ class AbstractScript(metaclass=abc.ABCMeta):
         else:
             self.loop.run_until_complete(task)
         finally:
-            self.loop.run_until_complete(self._close())
-
             if self.periodic_task is not None:
                 self.periodic_task.cancel()
 
