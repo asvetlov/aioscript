@@ -63,10 +63,10 @@ class AbstractScript(metaclass=abc.ABCMeta):
 
     def setup_parser(self):
         """
-        Defines command-line arguments.
+        Define command-line arguments.
         Base arguments:
-        - coroutines - number of workerks.
-        - periodic_interval - number of seconds
+        - coroutines - number of workers.
+        - periodic_interval - number of seconds.
         :return: argparse.ArgumentParser instance
         """
         parser = argparse.ArgumentParser()
@@ -251,11 +251,15 @@ class AbstractScript(metaclass=abc.ABCMeta):
         self.run_in_pool(fibonacci, args=(42, )
         ```
         :param func: heavy function to be run in process pool.
-        :param args: args for func.
-        :param kwargs: kwargs for func
-        :return:
+        :param args: arguments for func.
+        :param kwargs: keyword arguments for func.
+        :return: result of func.
         """
-        return await self.pool.coro_apply(func, *args, **kwargs, loop=self.loop)
+        return await self.pool.coro_apply(
+            func,
+            *args, **kwargs,
+            loop=self.loop,
+        )
 
     async def _run(self):
         try:
@@ -341,4 +345,3 @@ class AbstractScript(metaclass=abc.ABCMeta):
             coro = self._close()
 
             self._finish(coro)
-
