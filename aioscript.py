@@ -105,6 +105,13 @@ class AbstractScript(metaclass=abc.ABCMeta):
         """
         pass
 
+    async def terminated(self):
+        """
+        Called after script terminating.
+        :return:
+        """
+        pass
+
     def terminate(self):
         """
         Terminate script running. Kills all workers.
@@ -157,6 +164,7 @@ class AbstractScript(metaclass=abc.ABCMeta):
                 self.queue.get_nowait()
                 self.queue.task_done()
 
+            await self.terminated()
         except Exception as exc:
             self.logger.exception(exc, exc_info=exc)
             await self.terminate()
