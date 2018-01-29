@@ -2,7 +2,10 @@ import abc
 import argparse
 import asyncio
 import logging
+import os
+import signal
 import sys
+from functools import partial
 
 
 class AbstractScript(metaclass=abc.ABCMeta):
@@ -96,7 +99,20 @@ class AbstractScript(metaclass=abc.ABCMeta):
         pass
 
     async def done(self):
+        """
+        Called after all workers are done.
+        :return:
+        """
         pass
+
+    def terminate(self):
+        """
+        Terminate script running. Kills all workers.
+        :return:
+        """
+        self.loop.call_soon(partial(os.kill, os.getpid(), signal.SIGINT))
+
+        return self.loop.create_future()
 
     async def _close(self):
         await self.close()
@@ -143,6 +159,7 @@ class AbstractScript(metaclass=abc.ABCMeta):
 
         except Exception as exc:
             self.logger.exception(exc, exc_info=exc)
+            await self.terminate()
 
     def run(self):
         task = self.loop.create_task(self._run())
