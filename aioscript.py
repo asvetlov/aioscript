@@ -178,6 +178,16 @@ class AbstractScript(metaclass=abc.ABCMeta):
     async def close(self):
         pass
 
+    def _finish(self, coro):
+        try:
+            return self.loop.run_until_complete(coro)
+        finally:
+            self.loop.run_until_complete(self.loop.shutdown_asyncgens())
+
+            self.loop.call_soon(self.loop.stop)
+            self.loop.run_forever()
+            self.loop.close()
+
     async def _run(self):
         try:
             async for item in self.populate():
@@ -248,3 +258,8 @@ class AbstractScript(metaclass=abc.ABCMeta):
                     self.loop.run_until_complete(self.periodic_task)
                 except:  # noqa
                     pass
+
+            coro = self._close()
+
+            self._finish(coro)
+
