@@ -53,20 +53,6 @@ class AbstractScript(metaclass=abc.ABCMeta):
 
         self.setup()
 
-    def _setup_loop(self, use_uvloop):
-        debug = bool(os.environ.get('PYTHONASYNCIODEBUG'))
-
-        if use_uvloop:
-            import uvloop
-            loop = uvloop.new_event_loop()
-        else:
-            import asyncio
-            loop = asyncio.new_event_loop()
-
-        loop.set_debug(debug)
-
-        return loop
-
     def setup_options(self, argv, parser):
         options = parser.parse_args(argv)
 
@@ -115,6 +101,20 @@ class AbstractScript(metaclass=abc.ABCMeta):
         )
 
         return parser
+
+    def _setup_loop(self, use_uvloop):
+        debug = bool(os.environ.get('PYTHONASYNCIODEBUG'))
+
+        if use_uvloop:
+            import uvloop
+            loop = uvloop.new_event_loop()
+        else:
+            import asyncio
+            loop = asyncio.new_event_loop()
+
+        loop.set_debug(debug)
+
+        return loop
 
     async def _periodic(self):
         while True:
@@ -210,7 +210,7 @@ class AbstractScript(metaclass=abc.ABCMeta):
 
     def terminate(self):
         """
-        Terminate script running. Kills all workers.
+        Terminate running script. Kill all workers.
         :return:
         """
         self.loop.call_soon(partial(os.kill, os.getpid(), signal.SIGINT))
@@ -238,10 +238,24 @@ class AbstractScript(metaclass=abc.ABCMeta):
             self.loop.run_forever()
             self.loop.close()
 
-    async def run_in_pool(self, *args, **kwargs):
-        kwargs['loop'] = self.loop
+    async def run_in_pool(self, func, *args, **kwargs):
+        """
+        Run CPU-bound calculations in process pool.
+        Example:
+        ```
+        def fibonacci(n):
+            if n < 2:
+                return n
+            return fibonacci(n - 2) + fibonacci(n - 1)
 
-        return await self.pool.coro_apply(*args, **kwargs)
+        self.run_in_pool(fibonacci, args=(42, )
+        ```
+        :param func: heavy function to be run in process pool.
+        :param args: args for func.
+        :param kwargs: kwargs for func
+        :return:
+        """
+        return await self.pool.coro_apply(func, *args, **kwargs, loop=self.loop)
 
     async def _run(self):
         try:
@@ -293,6 +307,11 @@ class AbstractScript(metaclass=abc.ABCMeta):
             await self.terminate()
 
     def run(self):
+        """
+        Entrypoint to run script.
+        Should not be redefined.
+        :return:
+        """
         signal.signal(signal.SIGTERM, _sigint)
         task = self.loop.create_task(self._run())
 
