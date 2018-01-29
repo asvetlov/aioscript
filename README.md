@@ -1,2 +1,2 @@
 # aioscript
-initiate repository by Andrey Lytvyn
+Abstract asynchronous with threading and multiprocessing
