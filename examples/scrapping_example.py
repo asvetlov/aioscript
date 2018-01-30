@@ -1,4 +1,4 @@
-import csv
+import json
 
 from aiohttp import ClientSession, web
 
@@ -7,13 +7,12 @@ from aioscript import AbstractScript
 
 class Script(AbstractScript):
     """
-    Base usage of AbstractScript: send async requests by means of `aiohttp`.
-
-    This script reads urls from file(source_path) and sends async requests.
+    Script usage:
+    reads urls from file(source_path) and sends async requests via `aiohttp.ClientSession`.
     `periodic` method periodically logs info about script progress.
 
     Run command:
-    python3 aiohttp_example.py --source_path=urls.csv --coroutines=10
+    python3 scrapping_example.py --source_path=urls.json --coroutines=10
     """
 
     def setup(self):
@@ -63,8 +62,8 @@ class Script(AbstractScript):
         and populate them to workers.
         """
         with open(self.options.source_path, encoding='utf-8') as fp:
-            for row in csv.reader(fp):
-                yield row[0]
+            for url in json.load(fp):
+                yield url
 
 
 if __name__ == '__main__':
