@@ -65,9 +65,11 @@ class AbstractScript(metaclass=abc.ABCMeta):
         """
         Define command-line arguments.
         Base arguments:
-        - coroutines - number of workers.
-        - periodic_interval - number of seconds.
-        :return: argparse.ArgumentParser instance
+        -- coroutines - number of workers.
+        -- threads - number of threads in ThreadPoolExecutor.
+        -- processes - number of processes in AioPool.
+        -- periodic_interval - number of seconds that periodic task executes.
+        :return: argparse.ArgumentParser instance.
         """
         parser = argparse.ArgumentParser()
 
