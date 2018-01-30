@@ -1,10 +1,20 @@
 import csv
 
 from aiohttp import ClientSession, web
+
 from aioscript import AbstractScript
 
 
 class Script(AbstractScript):
+    """
+    Base usage of AbstractScript: send async requests by means of `aiohttp`.
+
+    This script reads urls from file(source_path) and sends async requests.
+    `periodic` method periodically logs info about script progress.
+
+    Run command:
+    python3 aiohttp_example.py --source_path=urls.csv --coroutines=10
+    """
 
     def setup(self):
         self.session = ClientSession(loop=self.loop)  # initialize aiohttp client session
@@ -37,12 +47,10 @@ class Script(AbstractScript):
         }
         self.logger.info(msg, context)
 
-    async def handle(self, data):
+    async def handle(self, url):
         """
         Worker sends request to urls simultaneously
         """
-        url = data
-
         async with self.session.get(url) as response:
             if response.status == web.HTTPOk.status_code:
                 self.total += 1
@@ -55,8 +63,8 @@ class Script(AbstractScript):
         and populate them to workers.
         """
         with open(self.options.source_path, encoding='utf-8') as fp:
-            for url in csv.reader(fp):
-                yield url
+            for row in csv.reader(fp):
+                yield row[0]
 
 
 if __name__ == '__main__':
