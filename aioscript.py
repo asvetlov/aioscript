@@ -42,7 +42,7 @@ class AbstractScript(metaclass=abc.ABCMeta):
         self.coroutines = set()
 
         for _ in range(self.options.coroutines):
-            coro = self.loop.create_task(self.coro())
+            coro = self.loop.create_task(self._coro())
             self.coroutines.add(coro)
             coro.add_done_callback(self.coroutines.remove)
 
@@ -145,7 +145,7 @@ class AbstractScript(metaclass=abc.ABCMeta):
         """
         pass
 
-    async def coro(self):
+    async def _coro(self):
         while True:
             try:
                 data = await self.queue.get()
