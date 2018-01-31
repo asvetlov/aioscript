@@ -104,7 +104,8 @@ def test_script_periodic():
     periodic_interval = '--periodic_interval={seconds}'.format(
         seconds=interval,
     )
-    with mock.patch('aioscript.sys.argv', ['prog', '--coroutines=5', periodic_interval]):
+    cmd_args = ['prog', '--coroutines=5', periodic_interval]
+    with mock.patch('aioscript.sys.argv', cmd_args):
         Script().run()
 
     assert check == sleep_time // interval
@@ -126,7 +127,8 @@ def test_script_run_in_pool():
         async def handle(self, n):
             check[n] = await self.run_in_pool(fib, args=(n, ))
 
-    with mock.patch('aioscript.sys.argv', ['prog', '--coroutines=5', '--processes=2']):
+    cmd_args = ['prog', '--coroutines=5', '--processes=2']
+    with mock.patch('aioscript.sys.argv', cmd_args):
         Script().run()
 
     # expected = [0, 1, 1, 2, 3]
@@ -156,7 +158,8 @@ def test_script_run_in_pool_zero_processes():
         async def handle(self, n):
             check[n] = await self.run_in_pool(fib, args=(n, ))
 
-    with mock.patch('aioscript.sys.argv', ['prog', '--coroutines=5', '--processes=0']):
+    cmd_args = ['prog', '--coroutines=5', '--processes=0']
+    with mock.patch('aioscript.sys.argv', cmd_args):
         with pytest.raises(ValueError):
             Script().run()
 
@@ -178,10 +181,15 @@ def test_script_run_in_executor():
                 yield i
 
         async def handle(self, data):
-            ret = await self.loop.run_in_executor(self.executor, blocking_func, data)
+            ret = await self.loop.run_in_executor(
+                self.executor,
+                blocking_func,
+                data,
+            )
             check.append(ret)
 
-    with mock.patch('aioscript.sys.argv', ['prog', '--coroutines=5', '--threads=4']):
+    cmd_args = ['prog', '--coroutines=5', '--threads=4']
+    with mock.patch('aioscript.sys.argv', cmd_args):
         Script().run()
 
     assert sorted(check) == list(range(5))

@@ -10,6 +10,10 @@ from functools import partial
 
 import aioprocessing
 
+__version__ = '0.0.1'
+
+__all__ = ('AbstractScript',)
+
 
 def _sigint(signum, frame):
     os.kill(os.getpid(), signal.SIGINT)
