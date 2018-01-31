@@ -32,6 +32,34 @@ def test_script_main():
     assert sorted(check) == list(range(5))
 
 
+def test_script_handle_exception():
+    check = list()
+
+    class Script(AbstractScript):
+        def setup(self):
+            pass
+
+        async def done(self):
+            check.append(42)
+
+        async def terminated(self):
+            check.append(420)
+
+        async def populate(self):
+            for i in range(5):
+                yield i
+
+        async def handle(self, data):
+            if data == 3:
+                raise ZeroDivisionError
+
+    with mock.patch('aioscript.sys.argv', ['prog', '--coroutines=5']):
+        Script().run()
+
+    # check that Script ends successfully and done method is called
+    assert check == [42]
+
+
 def test_script_done():
     check = list()
 
