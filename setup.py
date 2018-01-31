@@ -31,9 +31,6 @@ setup(
     url='https://github.com/wikibusiness/aioscript',
     description='Base asynchronous script with threading and multiprocessing',
     long_description=read('README.rst'),
-    extras_require={
-        ':python_version=="3.3"': ['asyncio'],
-    },
     install_requires=[
         'aioprocessing>=1.0.0',
     ],
@@ -47,9 +44,6 @@ setup(
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.3',
-        'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
     ],

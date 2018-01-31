@@ -3,6 +3,15 @@ aioscript
 
 :info: Base asyncio script with support of threading and multiprocessing
 
+.. image:: https://travis-ci.org/wikibusiness/aioscript.svg?branch=master
+    :target: https://travis-ci.org/wikibusiness/aioscript
+
+.. image:: https://img.shields.io/pypi/v/aioscript.svg
+    :target: https://pypi.python.org/pypi/aioscript
+
+.. image:: https://codecov.io/gh/wikibusiness/aioscript/branch/master/graph/badge.svg
+    :target: https://codecov.io/gh/wikibusiness/aioscript
+
 Installation
 ------------
 
@@ -55,7 +64,7 @@ Usage
 
     python script.py --coroutines=10
 
-Python 3.3+ is required
+Python 3.5+ is required
 
 Thanks
 ------
