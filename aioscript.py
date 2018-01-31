@@ -147,7 +147,6 @@ class AbstractScript(metaclass=abc.ABCMeta):
         Example: logs number of processed items.
         :return:
         """
-        pass
 
     async def _coro(self):
         while True:
@@ -188,7 +187,6 @@ class AbstractScript(metaclass=abc.ABCMeta):
         :param data: data t
         :return:
         """
-        pass
 
     @abc.abstractmethod
     def populate(self):
@@ -198,21 +196,18 @@ class AbstractScript(metaclass=abc.ABCMeta):
         Must be redefined.
         :return:
         """
-        pass
 
     async def done(self):
         """
         Called after all workers are done.
         :return:
         """
-        pass
 
     async def terminated(self):
         """
         Called after script terminating.
         :return:
         """
-        pass
 
     def terminate(self):
         """
@@ -232,7 +227,10 @@ class AbstractScript(metaclass=abc.ABCMeta):
             self.logger.exception(exc, exc_info=exc)
 
     async def close(self):
-        pass
+        """
+        Close your connections or descriptors here.
+        :return:
+        """
 
     def _finish(self, coro):
         try:
