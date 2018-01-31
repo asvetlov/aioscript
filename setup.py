@@ -34,6 +34,9 @@ setup(
     extras_require={
         ':python_version=="3.3"': ['asyncio'],
     },
+    install_requires=[
+        'aioprocessing>=1.0.0',
+    ],
     setup_requires=['pytest-runner'] if needs_pytest else [],
     tests_require=['pytest', 'pytest-cov'],
     py_modules=['aioscript'],
@@ -50,5 +53,5 @@ setup(
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
     ],
-    keywords=['asyncio', 'script', ],
+    keywords=['asyncio', 'aiohttp', 'script', ],
 )
