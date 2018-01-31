@@ -12,6 +12,10 @@ def fib(n):
     return fib(n - 2) + fib(n - 1)
 
 
+DONE = 42
+TERMINATED = 420
+
+
 def test_script_main():
     check = list()
 
@@ -41,10 +45,10 @@ def test_script_handle_exception():
             pass
 
         async def done(self):
-            check.append(42)
+            check.append(DONE)
 
         async def terminated(self):
-            check.append(420)
+            check.append(TERMINATED)
 
         async def populate(self):
             for i in range(5):
@@ -59,7 +63,7 @@ def test_script_handle_exception():
         Script().run()
 
     # check that Script ends successfully and done method is called
-    assert check == [42]
+    assert check == [DONE]
 
 
 def test_script_done():
@@ -77,13 +81,40 @@ def test_script_done():
             check.append(data)
 
         async def done(self):
-            check.append(42)
+            check.append(DONE)
 
     cmd_args = ['prog', '--coroutines=5']
     with mock.patch('aioscript.sys.argv', cmd_args):
         Script().run()
 
-    assert sorted(check) == list(range(5)) + [42]
+    assert sorted(check) == [0, 1, 2, 3, 4, DONE]
+
+
+def test_script_done_exception():
+    check = list()
+
+    class Script(AbstractScript):
+        def setup(self):
+            pass
+
+        async def populate(self):
+            for i in range(5):
+                yield i
+
+        async def handle(self, data):
+            check.append(data)
+
+        async def done(self):
+            1 / 0
+
+        async def terminated(self):
+            check.append(TERMINATED)
+
+    cmd_args = ['prog', '--coroutines=5']
+    with mock.patch('aioscript.sys.argv', cmd_args):
+        Script().run()
+
+    assert sorted(check) == [0, 1, 2, 3, 4]
 
 
 def test_script_terminated():
@@ -102,16 +133,16 @@ def test_script_terminated():
                 await self.terminate()
 
         async def done(self):
-            check.append(42)
+            check.append(DONE)
 
         async def terminated(self):
-            check.append(420)
+            check.append(TERMINATED)
 
     cmd_args = ['prog', '--coroutines=5']
     with mock.patch('aioscript.sys.argv', cmd_args):
         Script().run()
 
-    assert check == [420]
+    assert check == [TERMINATED]
 
 
 def test_script_periodic():
@@ -141,6 +172,70 @@ def test_script_periodic():
         Script().run()
 
     assert check == sleep_time // interval
+
+
+def test_script_periodic_terminate():
+    check = list()
+    sleep_time = 2
+    interval = 1
+
+    class Script(AbstractScript):
+        def setup(self):
+            pass
+
+        async def populate(self):
+            for i in range(5):
+                yield i
+
+        async def handle(self, data):
+            await asyncio.sleep(sleep_time)
+
+        async def periodic(self):
+            await self.terminate()
+
+        async def terminated(self):
+            check.append(TERMINATED)
+
+    periodic_interval = '--periodic_interval={seconds}'.format(
+        seconds=interval,
+    )
+    cmd_args = ['prog', '--coroutines=5', periodic_interval]
+    with mock.patch('aioscript.sys.argv', cmd_args):
+        Script().run()
+
+    assert check == [TERMINATED]
+
+
+def test_script_periodic_exception():
+    check = list()
+    sleep_time = 2
+    interval = 1
+
+    class Script(AbstractScript):
+        def setup(self):
+            pass
+
+        async def populate(self):
+            for i in range(5):
+                yield i
+
+        async def handle(self, data):
+            await asyncio.sleep(sleep_time)
+
+        async def periodic(self):
+            1 / 0
+
+        async def done(self):
+            check.append(DONE)
+
+    periodic_interval = '--periodic_interval={seconds}'.format(
+        seconds=interval,
+    )
+    cmd_args = ['prog', '--coroutines=5', periodic_interval]
+    with mock.patch('aioscript.sys.argv', cmd_args):
+        Script().run()
+
+    assert check == [DONE]
 
 
 def test_script_run_in_pool():
@@ -213,16 +308,16 @@ def test_script_run_in_pool_terminate():
                 await self.terminate()
 
         async def done(self):
-            check.append(42)
+            check.append(DONE)
 
         async def terminated(self):
-            check.append(420)
+            check.append(TERMINATED)
 
     cmd_args = ['prog', '--coroutines=5', '--processes=4']
     with mock.patch('aioscript.sys.argv', cmd_args):
         Script().run()
 
-    assert check == [420]
+    assert check == [TERMINATED]
 
 
 def test_script_run_in_executor():
