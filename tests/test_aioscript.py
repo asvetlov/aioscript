@@ -145,6 +145,35 @@ def test_script_terminated():
     assert check == [TERMINATED]
 
 
+def test_script_terminated_queue_not_empty():
+    check = list()
+
+    class Script(AbstractScript):
+        def setup(self):
+            pass
+
+        async def populate(self):
+            for i in range(10):
+                yield i
+
+        async def handle(self, data):
+            if data == 1:
+                await self.terminate()
+            await asyncio.sleep(1)
+
+        async def done(self):
+            check.append(DONE)
+
+        async def terminated(self):
+            check.append(TERMINATED)
+
+    cmd_args = ['prog', '--coroutines=1']
+    with mock.patch('aioscript.sys.argv', cmd_args):
+        Script().run()
+
+    assert check == [TERMINATED]
+
+
 def test_script_periodic():
     check = 0
     sleep_time = 5
