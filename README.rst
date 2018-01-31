@@ -1,7 +1,7 @@
 aioscript
 =========
 
-:info: General asyncio script with support of threading and multiprocessing
+:info: Base asyncio script with support of threading and multiprocessing
 
 Installation
 ------------
