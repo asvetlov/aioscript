@@ -64,7 +64,7 @@ Usage
 
     python script.py --coroutines=10
 
-Python 3.5+ is required
+Python 3.6+ is required
 
 Thanks
 ------
