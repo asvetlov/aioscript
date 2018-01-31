@@ -84,7 +84,7 @@ class Script(AbstractScript):
             params=params,
         ) as response:
             if response.status == web.HTTPTooManyRequests.status_code:
-                self.terminate()
+                await self.terminate()
 
             self.results[str(response.url)] = await response.json()
 
