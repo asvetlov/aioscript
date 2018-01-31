@@ -26,7 +26,8 @@ def test_script_main():
         async def handle(self, data):
             check.append(data)
 
-    with mock.patch('aioscript.sys.argv', ['prog', '--coroutines=5']):
+    cmd_args = ['prog', '--coroutines=5']
+    with mock.patch('aioscript.sys.argv', cmd_args):
         Script().run()
 
     assert sorted(check) == list(range(5))
@@ -53,7 +54,8 @@ def test_script_handle_exception():
             if data == 3:
                 raise ZeroDivisionError
 
-    with mock.patch('aioscript.sys.argv', ['prog', '--coroutines=5']):
+    cmd_args = ['prog', '--coroutines=5']
+    with mock.patch('aioscript.sys.argv', cmd_args):
         Script().run()
 
     # check that Script ends successfully and done method is called
@@ -77,7 +79,8 @@ def test_script_done():
         async def done(self):
             check.append(42)
 
-    with mock.patch('aioscript.sys.argv', ['prog', '--coroutines=5']):
+    cmd_args = ['prog', '--coroutines=5']
+    with mock.patch('aioscript.sys.argv', cmd_args):
         Script().run()
 
     assert sorted(check) == list(range(5)) + [42]
@@ -104,7 +107,8 @@ def test_script_terminated():
         async def terminated(self):
             check.append(420)
 
-    with mock.patch('aioscript.sys.argv', ['prog', '--coroutines=5']):
+    cmd_args = ['prog', '--coroutines=5']
+    with mock.patch('aioscript.sys.argv', cmd_args):
         Script().run()
 
     assert check == [420]
@@ -159,7 +163,6 @@ def test_script_run_in_pool():
     with mock.patch('aioscript.sys.argv', cmd_args):
         Script().run()
 
-    # expected = [0, 1, 1, 2, 3]
     expected = {
         0: 0,
         1: 1,
@@ -190,6 +193,36 @@ def test_script_run_in_pool_zero_processes():
     with mock.patch('aioscript.sys.argv', cmd_args):
         with pytest.raises(ValueError):
             Script().run()
+
+
+def test_script_run_in_pool_terminate():
+    check = list()
+
+    class Script(AbstractScript):
+        multiprocessing = True
+
+        def setup(self):
+            pass
+
+        async def populate(self):
+            for i in range(5):
+                yield i
+
+        async def handle(self, data):
+            if data == 3:
+                await self.terminate()
+
+        async def done(self):
+            check.append(42)
+
+        async def terminated(self):
+            check.append(420)
+
+    cmd_args = ['prog', '--coroutines=5', '--processes=4']
+    with mock.patch('aioscript.sys.argv', cmd_args):
+        Script().run()
+
+    assert check == [420]
 
 
 def test_script_run_in_executor():
