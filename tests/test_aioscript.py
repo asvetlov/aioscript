@@ -129,8 +129,7 @@ def test_script_terminated():
                 yield i
 
         async def handle(self, data):
-            if data == 3:
-                await self.terminate()
+            await self.terminate()
 
         async def done(self):
             check.append(DONE)
