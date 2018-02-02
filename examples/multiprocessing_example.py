@@ -36,8 +36,7 @@ class Script(AbstractScript):
         return parser
 
     async def handle(self, n):
-        fib_number = await self.pool.coro_apply(fib, args=(n, ))
-        self.results[n] = fib_number
+        self.results[n] = await self.run_in_pool(fib, (n, ))
 
     async def populate(self):
         for n in [30, 32, 35, 38]:
