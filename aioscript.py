@@ -26,6 +26,7 @@ class AbstractScript(metaclass=abc.ABCMeta):
     periodic_task = None
 
     def __init__(self):
+        self._terminating = False
         parser = self.setup_parser()
 
         self.options = self.setup_options(
@@ -214,7 +215,9 @@ class AbstractScript(metaclass=abc.ABCMeta):
         Terminate running script. Kill all workers.
         :return:
         """
-        self.loop.call_soon(partial(os.kill, os.getpid(), signal.SIGINT))
+        if not self._terminating:
+            self._terminating = True
+            self.loop.call_soon(partial(os.kill, os.getpid(), signal.SIGINT))
 
         return self.loop.create_future()
 
