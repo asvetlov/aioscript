@@ -1,7 +1,7 @@
 aioprocessing==1.0.0
 flake8==3.5.0
 ipdb==0.10.3
-ipython==6.2.1
+ipython==7.16.3
 pytest==3.3.2
 pytest-cov==2.5.1
 pytest-runner==3.0
